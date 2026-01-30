@@ -9,16 +9,15 @@
 
 ### Стек
 - Backend: FastAPI + SQLAlchemy (PostgreSQL)
-- ETL: Python (requests), RapidFuzz (нечёткий матчинг)
+- ETL: Python, Scrapy
 - Деплой: Docker / docker-compose
 
 ### Структура
-- `src/app` — API, модели ORM
+- `app` — API, модели ORM
 - `scripts` — загрузчики источников и ETL-дедупликация
-- `migrations/001_init.sql` — SQL-инициализация БД
-- `data/raw/*` — сырые JSON-снапшоты (создаются скриптами)
+- `core/import_data` — импорт данных в SQL БД
 
 ### Схема БД (упрощённо)
-- `vacancies` — канонические книги (после дедупликации)
+- `products` — канонические книги (после дедупликации)
 - `offers` — книги из источников (сырые данные)
 - `attributes` — произвольные атрибуты (опционально)

@@ -6,7 +6,6 @@ import json
 class ChitaiGorodSpider(scrapy.Spider):
     name = "chitai_gorod"
     allowed_domains = ["chitai-gorod.ru"]
-    # Начинаем с раздела новинок или любого крупного раздела
     start_urls = ["https://www.chitai-gorod.ru/catalog/books/"]
 
     custom_settings = {
@@ -23,12 +22,11 @@ class ChitaiGorodSpider(scrapy.Spider):
 
     def parse(self, response):
         # Собираем ссылки на книги
-        # Класс карточки обычно содержит 'product-card'
         book_links = response.css('a.product-card__title::attr(href)').getall()
         for link in book_links:
             yield response.follow(link, self.parse_book)
 
-        # ПАГИНАЦИЯ (строго по вашему скриншоту)
+        # ПАГИНАЦИЯ
         next_page = response.css('a.chg-app-pagination__button-next::attr(href)').get()
 
         if next_page:
@@ -40,7 +38,7 @@ class ChitaiGorodSpider(scrapy.Spider):
         item['website_name'] = 'chitai-gorod.ru'
         item['url'] = response.url
         
-        # 1. ЗАГОЛОВОК (берем из мета-тегов, они есть всегда для SEO)
+        # 1. Заголовк
         title = response.xpath("//meta[@property='og:title']/@content").get()
         if title:
             # Чистим от SEO-мусора
@@ -48,7 +46,7 @@ class ChitaiGorodSpider(scrapy.Spider):
         else:
             item['title'] = response.css('h1::text').get('').strip()
 
-        # 2. АВТОР (пробуем найти в мета-тегах или через регулярку в коде)
+        # 2. Автор
         author = response.xpath("//meta[@name='author']/@content").get()
         if not author:
             # Ищем паттерн "author":{"name":"Имя"} или "authorName":"Имя"
@@ -57,12 +55,12 @@ class ChitaiGorodSpider(scrapy.Spider):
                 author = author_match.group(1).encode().decode('unicode-escape') # декодируем юникод
         item['author'] = author
 
-        # 3. ЦЕНА (из мета-тегов)
+        # 3. Цена
         price = response.xpath("//meta[@property='product:price:amount']/@content").get()
         if price:
             item['price'] = float(price)
 
-        # 4. ISBN (Брутфорс поиск по всему тексту страницы)
+        # 4. ISBN
         # Ищем паттерн: "ISBN", потом любые символы, потом 13 цифр
         # Или просто ищем 13 цифр, начинающихся на 978 или 979
         isbn_match = re.search(r'97[89][0-9-]{10,15}', response.text)
@@ -70,13 +68,13 @@ class ChitaiGorodSpider(scrapy.Spider):
             # Очищаем найденное от дефисов
             item['isbn'] = re.sub(r'\D', '', isbn_match.group())
         
-        # 5. ОПИСАНИЕ (из мета-тегов)
+        # 5. Описание
         item['description'] = response.xpath("//meta[@property='og:description']/@content").get()
 
-        # 6. КАРТИНКА
+        # 6. Картинка
         item['image_url'] = response.xpath("//meta[@property='og:image']/@content").get()
 
-        # 7. ИЗДАТЕЛЬСТВО
+        # 7. Издательство
         publisher = response.xpath("//span[contains(text(), 'Издательство')]/following-sibling::span/text()").get()
         if not publisher:
             pub_match = re.search(r'\"publisher\"\:\{\"name\"\:\"(.*?)\"', response.text)
@@ -84,7 +82,7 @@ class ChitaiGorodSpider(scrapy.Spider):
                 publisher = pub_match.group(1).encode().decode('unicode-escape')
         item['publisher'] = publisher
 
-        # ВАЛИДАЦИЯ
+        # Валидация
         if item.get('isbn') and len(item['isbn']) >= 10:
             self.logger.info(f"+++ УСПЕХ: {item['title']} (ISBN: {item['isbn']})")
             yield item

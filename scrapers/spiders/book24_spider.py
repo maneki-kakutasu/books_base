@@ -6,7 +6,6 @@ import json
 class Book24Spider(scrapy.Spider):
     name = "book24"
     allowed_domains = ["book24.ru"]
-    # Начинаем с раздела художественной литературы
     start_urls = ["https://book24.ru/catalog/"]
 
     custom_settings = {
@@ -27,7 +26,6 @@ class Book24Spider(scrapy.Spider):
         for link in book_links:
             yield response.follow(link, self.parse_book)
 
-        # Исправленный селектор пагинации по вашему скриншоту:
         # Ищем тег <a> с классом pagination__item и _next
         next_page = response.css('a.pagination__item._next::attr(href)').get()
 
@@ -43,13 +41,12 @@ class Book24Spider(scrapy.Spider):
         # 1. Заголовок
         item['title'] = response.css('h1::text').get('').strip()
         
-        # 2. Цена (ищем в разных местах)
+        # 2. Цена
         price_raw = response.css('.app-price::text').get() or response.css('.product-sidebar-price__main-price::text').get()
         if price_raw:
             item['price'] = float(re.sub(r'\D', '', price_raw))
 
-        # 3. Самое важное: Характеристики (ISBN, Автор, Издательство)
-        # Мы перебираем все блоки характеристик
+        # 3. ISBN
         chars = response.css('.product-characteristic__item')
         for char in chars:
             label = char.css('.product-characteristic__label::text').get('').strip()
@@ -68,9 +65,8 @@ class Book24Spider(scrapy.Spider):
                 if year_match:
                     item['year'] = int(year_match.group())
 
-        # 4. Ссылка на картинку (пробуем data-src, если src — это заглушка)
+        # 4. Ссылка на картинку
         img = response.css('.product-poster__picture img')
-        # Более точный поиск картинки
         img_url = response.css('img.product-poster__main-image::attr(src)').get() or \
                   response.css('img.product-poster__main-image::attr(data-src)').get() or \
                   response.css('.product-poster__picture img::attr(src)').get()
@@ -84,7 +80,7 @@ class Book24Spider(scrapy.Spider):
         item['website_name'] = 'book24.ru'
         item['description'] = " ".join(response.css('.product-about__text p::text').getall()).strip()
 
-        # Валидация: не отдаем айтем, если нет ISBN (он нам бесполезен для интеграции)
+        # Валидация: не отдаем айтем, если нет ISBN
         if item.get('isbn') and item.get('title'):
             yield item
         else:
