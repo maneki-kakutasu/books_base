@@ -1,0 +1,19 @@
+# Scraping
+scrapy
+fake-useragent
+
+# Backend
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pydantic
+pydantic-settings
+jinja2
+
+# Data Processing
+pandas
+rapidfuzz
+
+# Dev
+python-dotenv
