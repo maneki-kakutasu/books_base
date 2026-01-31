@@ -1,38 +1,35 @@
-version: "3.9"
+version: '3.8'
+
 services:
   db:
     image: postgres:15
+    container_name: books_db_container
+    restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-fefu_jobs}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${DB_USER:-maneki_kakutasu}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-books_base}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "5432:5432"
     volumes:
-      - dbdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-fefu_jobs}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - postgres_data:/var/lib/postgresql/data
 
-  api:
+  web:
     build: .
-    environment:
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:-fefu_jobs}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      SUPERJOB_API_KEY: ${SUPERJOB_API_KEY:-}
+    container_name: fastapi_app_container
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app
     ports:
-      - "${APP_PORT:-8000}:8000"
+      - "8000:8000"
+    environment:
+      - DB_USER=${DB_USER:-maneki_kakutasu}
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-books_base}
     depends_on:
-      db:
-        condition: service_healthy
-    command: >
-      sh -c "psql postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB} -f migrations/001_init.sql &&
-             uvicorn src.app.main:app --host 0.0.0.0 --port 8000"
+      - db
 
 volumes:
-  dbdata: {}
+  postgres_data:

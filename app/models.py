@@ -9,7 +9,6 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True)
-    # ISBN — основной ключ для дедупликации книг
     isbn = Column(String(20), unique=True, index=True, nullable=True)
     title = Column(String(500), nullable=False, index=True)
     author = Column(String(500), index=True)
@@ -19,10 +18,8 @@ class Product(Base):
     year = Column(Integer)
     genre = Column(String(255))
     
-    # Служебные поля
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Связи
     offers = relationship("Offer", back_populates="product", cascade="all, delete-orphan")
     attributes = relationship("ProductAttribute", back_populates="product")
 
@@ -33,10 +30,10 @@ class Offer(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"))
     
-    website_name = Column(String(100))  # Например, 'labirint.ru'
-    price = Column(Float)               # Актуальная цена
-    old_price = Column(Float, nullable=True) # Цена без скидки (если есть)
-    url = Column(String(1000))          # Ссылка на страницу товара
+    website_name = Column(String(100))
+    price = Column(Float)
+    old_price = Column(Float, nullable=True)
+    url = Column(String(1000))
     availability = Column(Boolean, default=True)
     date_parsed = Column(DateTime, default=datetime.utcnow)
 
@@ -49,7 +46,7 @@ class ProductAttribute(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"))
     
-    name = Column(String(255))  # Например, 'Тип обложки'
-    value = Column(String(500)) # Например, 'Твердый переплет'
+    name = Column(String(255))
+    value = Column(String(500))
 
     product = relationship("Product", back_populates="attributes")
